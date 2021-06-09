@@ -23,29 +23,30 @@ import java.util.Map;
 
 /**
  * Universal KV storage interface.
+ * key与value为byte[]类型
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface KvStorage {
-    
+
     enum KvType {
         /**
          * Local file storage.
          */
         File,
-    
+
         /**
          * Local memory storage.
          */
         Memory,
-    
+
         /**
          * RocksDB storage.
          */
         RocksDB,
     }
-    
-    
+
+
     /**
      * get data by key.
      *
@@ -54,7 +55,7 @@ public interface KvStorage {
      * @throws KvStorageException KVStorageException
      */
     byte[] get(byte[] key) throws KvStorageException;
-    
+
     /**
      * batch get by List byte[].
      *
@@ -63,7 +64,7 @@ public interface KvStorage {
      * @throws KvStorageException KvStorageException
      */
     Map<byte[], byte[]> batchGet(List<byte[]> keys) throws KvStorageException;
-    
+
     /**
      * write data.
      *
@@ -72,7 +73,7 @@ public interface KvStorage {
      * @throws KvStorageException KvStorageException
      */
     void put(byte[] key, byte[] value) throws KvStorageException;
-    
+
     /**
      * batch write.
      *
@@ -81,7 +82,7 @@ public interface KvStorage {
      * @throws KvStorageException KvStorageException
      */
     void batchPut(List<byte[]> keys, List<byte[]> values) throws KvStorageException;
-    
+
     /**
      * delete with key.
      *
@@ -89,7 +90,7 @@ public interface KvStorage {
      * @throws KvStorageException KvStorageException
      */
     void delete(byte[] key) throws KvStorageException;
-    
+
     /**
      * batch delete with keys.
      *
@@ -97,7 +98,7 @@ public interface KvStorage {
      * @throws KvStorageException KvStorageException
      */
     void batchDelete(List<byte[]> keys) throws KvStorageException;
-    
+
     /**
      * do snapshot.
      *
@@ -105,7 +106,7 @@ public interface KvStorage {
      * @throws KvStorageException KVStorageException
      */
     void doSnapshot(final String backupPath) throws KvStorageException;
-    
+
     /**
      * load snapshot.
      *
@@ -113,7 +114,7 @@ public interface KvStorage {
      * @throws KvStorageException KVStorageException
      */
     void snapshotLoad(String path) throws KvStorageException;
-    
+
     /**
      * Get all keys.
      *
@@ -121,10 +122,10 @@ public interface KvStorage {
      * @throws KvStorageException KVStorageException
      */
     List<byte[]> allKeys() throws KvStorageException;
-    
+
     /**
      * shutdown.
      */
     void shutdown();
-    
+
 }
