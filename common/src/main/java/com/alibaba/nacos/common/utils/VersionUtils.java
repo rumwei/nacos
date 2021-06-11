@@ -26,16 +26,16 @@ import java.util.Properties;
  * @author xingxuechao on:2019/2/27 12:32 PM
  */
 public class VersionUtils {
-    
-    public static String version;
-    
+
+    public static String version; //读取的common模块中的resources/nacos-version.txt中的版本
+
     private static String clientVersion;
-    
+
     /**
      * 获取当前version.
      */
     public static final String VERSION_PLACEHOLDER = "${project.version}";
-    
+
     static {
         InputStream in = null;
         try {
@@ -59,14 +59,14 @@ public class VersionUtils {
             }
         }
     }
-    
+
     private static final Comparator<String> STRING_COMPARATOR = new Comparator<String>() {
         @Override
         public int compare(String o1, String o2) {
             return o1.compareTo(o2);
         }
     };
-    
+
     /**
      * compare two version who is latest.
      *
@@ -91,7 +91,7 @@ public class VersionUtils {
         }
         return Objects.compare(sA[2].split("-")[0], sB[2].split("-")[0], STRING_COMPARATOR);
     }
-    
+
     public static String getFullClientVersion() {
         return clientVersion;
     }

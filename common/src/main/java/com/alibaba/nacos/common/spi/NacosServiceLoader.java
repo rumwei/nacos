@@ -29,9 +29,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author xiweng.yy
  */
 public class NacosServiceLoader {
-    
+
     private static final Map<Class<?>, Collection<Class<?>>> SERVICES = new ConcurrentHashMap<Class<?>, Collection<Class<?>>>();
-    
+
     /**
      * Load service.
      *
@@ -46,20 +46,21 @@ public class NacosServiceLoader {
             return newServiceInstances(service);
         }
         Collection<T> result = new LinkedHashSet<T>();
+        //ServiceLoader其实就是spi那一套，使用细节可以看https://www.yuque.com/rumwei/es4ecb/bxl2ms#o3tre
         for (T each : ServiceLoader.load(service)) {
             result.add(each);
             cacheServiceClass(service, each);
         }
         return result;
     }
-    
+
     private static <T> void cacheServiceClass(final Class<T> service, final T instance) {
         if (!SERVICES.containsKey(service)) {
             SERVICES.put(service, new LinkedHashSet<Class<?>>());
         }
         SERVICES.get(service).add(instance.getClass());
     }
-    
+
     /**
      * New service instances.
      *
@@ -70,7 +71,7 @@ public class NacosServiceLoader {
     public static <T> Collection<T> newServiceInstances(final Class<T> service) {
         return SERVICES.containsKey(service) ? newServiceInstancesFromCache(service) : Collections.<T>emptyList();
     }
-    
+
     @SuppressWarnings("unchecked")
     private static <T> Collection<T> newServiceInstancesFromCache(Class<T> service) {
         Collection<T> result = new LinkedHashSet<T>();
@@ -79,7 +80,7 @@ public class NacosServiceLoader {
         }
         return result;
     }
-    
+
     private static Object newServiceInstance(final Class<?> clazz) {
         try {
             return clazz.newInstance();

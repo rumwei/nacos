@@ -79,84 +79,85 @@ import java.util.concurrent.ConcurrentSkipListMap;
  */
 @Component(value = "serverMemberManager")
 public class ServerMemberManager implements ApplicationListener<WebServerInitializedEvent> {
-    
+
     private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientBeanHolder
             .getNacosAsyncRestTemplate(Loggers.CORE);
-    
+
     private static boolean isUseAddressServer = false;
-    
+
     /**
      * Cluster node list.
      */
     private volatile ConcurrentSkipListMap<String, Member> serverList;
-    
+
     /**
      * Is this node in the cluster list.
      */
     private static volatile boolean isInIpList = true;
-    
+
     /**
      * port.
      */
     private int port;
-    
+
     /**
      * Address information for the local node.
      */
     private String localAddress;
-    
+
     /**
      * Addressing pattern instances.
      */
     private MemberLookup lookup;
-    
+
     /**
      * self member obj.
      */
     private volatile Member self;
-    
+
     /**
      * here is always the node information of the "UP" state.
      */
     private volatile Set<String> memberAddressInfos = new ConcurrentHashSet<>();
-    
+
     /**
      * Broadcast this node element information task.
      */
     private final MemberInfoReportTask infoReportTask = new MemberInfoReportTask();
-    
+
     public ServerMemberManager(ServletContext servletContext) throws Exception {
         this.serverList = new ConcurrentSkipListMap<>();
+        //naming模块运行到该处值为 servletContext.getContextPath()="/nacos"
         EnvUtil.setContextPath(servletContext.getContextPath());
-        
+
         init();
     }
-    
+
     protected void init() throws NacosException {
         Loggers.CORE.info("Nacos-related cluster resource initialization");
         this.port = EnvUtil.getProperty("server.port", Integer.class, 8848);
         this.localAddress = InetUtils.getSelfIP() + ":" + port;
         this.self = MemberUtil.singleParse(this.localAddress);
         this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
-        
+
         // init abilities.
         this.self.setAbilities(initMemberAbilities());
-        
+
         serverList.put(self.getAddress(), self);
-        
+
         // register NodeChangeEvent publisher to NotifyManager
         registerClusterEvent();
-        
+
         // Initializes the lookup mode
         initAndStartLookup();
-        
+
         if (serverList.isEmpty()) {
             throw new NacosException(NacosException.SERVER_ERROR, "cannot get serverlist, so exit.");
         }
-        
+
         Loggers.CORE.info("The cluster resource is initialized");
     }
-    
+
     private ServerAbilities initMemberAbilities() {
         ServerAbilities serverAbilities = new ServerAbilities();
         serverAbilities.getRemoteAbility().setSupportRemoteConnection(true);
@@ -164,13 +165,13 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         serverAbilities.getNamingAbility().setSupportJraft(true);
         return serverAbilities;
     }
-    
+
     private void initAndStartLookup() throws NacosException {
         this.lookup = LookupFactory.createLookUp(this);
         isUseAddressServer = this.lookup.useAddressServer();
         this.lookup.start();
     }
-    
+
     /**
      * switch look up.
      *
@@ -182,12 +183,12 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         isUseAddressServer = this.lookup.useAddressServer();
         this.lookup.start();
     }
-    
+
     private void registerClusterEvent() {
         // Register node change events
         NotifyCenter.registerToPublisher(MembersChangeEvent.class,
                 EnvUtil.getProperty("nacos.member-change-event.queue.size", Integer.class, 128));
-        
+
         // The address information of this node needs to be dynamically modified
         // when registering the IP change of this node
         NotifyCenter.registerSubscriber(new Subscriber<InetUtils.IPChangeEvent>() {
@@ -196,29 +197,29 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 String newAddress = event.getNewIP() + ":" + port;
                 ServerMemberManager.this.localAddress = newAddress;
                 EnvUtil.setLocalAddress(localAddress);
-                
+
                 Member self = ServerMemberManager.this.self;
                 self.setIp(event.getNewIP());
-                
+
                 String oldAddress = event.getOldIP() + ":" + port;
                 ServerMemberManager.this.serverList.remove(oldAddress);
                 ServerMemberManager.this.serverList.put(newAddress, self);
-                
+
                 ServerMemberManager.this.memberAddressInfos.remove(oldAddress);
                 ServerMemberManager.this.memberAddressInfos.add(newAddress);
             }
-            
+
             @Override
             public Class<? extends Event> subscribeType() {
                 return InetUtils.IPChangeEvent.class;
             }
         });
     }
-    
+
     public static boolean isUseAddressServer() {
         return isUseAddressServer;
     }
-    
+
     /**
      * member information update.
      *
@@ -227,12 +228,12 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
      */
     public boolean update(Member newMember) {
         Loggers.CLUSTER.debug("member information update : {}", newMember);
-        
+
         String address = newMember.getAddress();
         if (!serverList.containsKey(address)) {
             return false;
         }
-        
+
         serverList.computeIfPresent(address, (s, member) -> {
             if (NodeState.DOWN.equals(newMember.getState())) {
                 memberAddressInfos.remove(newMember.getAddress());
@@ -246,14 +247,14 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             }
             return member;
         });
-        
+
         return true;
     }
-    
+
     void notifyMemberChange() {
         NotifyCenter.publishEvent(MembersChangeEvent.builder().members(allMembers()).build());
     }
-    
+
     /**
      * Whether the node exists within the cluster.
      *
@@ -273,7 +274,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         }
         return result;
     }
-    
+
     public List<String> getServerListUnhealth() {
         List<String> unhealthyMembers = new ArrayList<>();
         for (Member member : this.allMembers()) {
@@ -281,23 +282,23 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             if (state.equals(NodeState.DOWN)) {
                 unhealthyMembers.add(member.getAddress());
             }
-            
+
         }
         return unhealthyMembers;
     }
-    
+
     public MemberLookup getLookup() {
         return lookup;
     }
-    
+
     public Member getSelf() {
         return this.self;
     }
-    
+
     public Member find(String address) {
         return serverList.get(address);
     }
-    
+
     /**
      * return this cluster all members.
      *
@@ -309,7 +310,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         set.add(self);
         return set;
     }
-    
+
     /**
      * return this cluster all members without self.
      *
@@ -320,16 +321,16 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         members.remove(self);
         return members;
     }
-    
+
     synchronized boolean memberChange(Collection<Member> members) {
-        
+
         if (members == null || members.isEmpty()) {
             return false;
         }
-        
+
         boolean isContainSelfIp = members.stream()
                 .anyMatch(ipPortTmp -> Objects.equals(localAddress, ipPortTmp.getAddress()));
-        
+
         if (isContainSelfIp) {
             isInIpList = true;
         } else {
@@ -337,18 +338,18 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             members.add(this.self);
             Loggers.CLUSTER.warn("[serverlist] self ip {} not in serverlist {}", self, members);
         }
-        
+
         // If the number of old and new clusters is different, the cluster information
         // must have changed; if the number of clusters is the same, then compare whether
         // there is a difference; if there is a difference, then the cluster node changes
         // are involved and all recipients need to be notified of the node change event
-        
+
         boolean hasChange = members.size() != serverList.size();
         ConcurrentSkipListMap<String, Member> tmpMap = new ConcurrentSkipListMap<>();
         Set<String> tmpAddressInfo = new ConcurrentHashSet<>();
         for (Member member : members) {
             final String address = member.getAddress();
-            
+
             Member existMember = serverList.get(address);
             if (existMember == null) {
                 hasChange = true;
@@ -357,19 +358,19 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 //to keep extendInfo and abilities that report dynamically.
                 tmpMap.put(address, existMember);
             }
-            
+
             if (NodeState.UP.equals(member.getState())) {
                 tmpAddressInfo.add(address);
             }
         }
-        
+
         serverList = tmpMap;
         memberAddressInfos = tmpAddressInfo;
-        
+
         Collection<Member> finalMembers = allMembers();
-        
+
         Loggers.CLUSTER.warn("[serverlist] updated to : {}", finalMembers);
-        
+
         // Persist the current cluster node information to cluster.conf
         // <important> need to put the event publication into a synchronized block to ensure
         // that the event publication is sequential
@@ -378,10 +379,10 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             Event event = MembersChangeEvent.builder().members(finalMembers).build();
             NotifyCenter.publishEvent(event);
         }
-        
+
         return hasChange;
     }
-    
+
     /**
      * members join this cluster.
      *
@@ -393,7 +394,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         set.addAll(allMembers());
         return memberChange(set);
     }
-    
+
     /**
      * members leave this cluster.
      *
@@ -405,7 +406,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         set.removeAll(members);
         return memberChange(set);
     }
-    
+
     /**
      * this member {@link Member#getState()} is health.
      *
@@ -419,11 +420,11 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         }
         return !NodeState.UP.equals(member.getState());
     }
-    
+
     public boolean isFirstIp() {
         return Objects.equals(serverList.firstKey(), this.localAddress);
     }
-    
+
     @Override
     public void onApplicationEvent(WebServerInitializedEvent event) {
         getSelf().setState(NodeState.UP);
@@ -434,7 +435,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         EnvUtil.setLocalAddress(this.localAddress);
         Loggers.CLUSTER.info("This node is ready to provide external services");
     }
-    
+
     /**
      * ServerMemberManager shutdown.
      *
@@ -447,61 +448,61 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         infoReportTask.shutdown();
         LookupFactory.destroy();
     }
-    
+
     public Set<String> getMemberAddressInfos() {
         return memberAddressInfos;
     }
-    
+
     @JustForTest
     public void updateMember(Member member) {
         serverList.put(member.getAddress(), member);
     }
-    
+
     @JustForTest
     public void setMemberAddressInfos(Set<String> memberAddressInfos) {
         this.memberAddressInfos = memberAddressInfos;
     }
-    
+
     @JustForTest
     public MemberInfoReportTask getInfoReportTask() {
         return infoReportTask;
     }
-    
+
     public Map<String, Member> getServerList() {
         return Collections.unmodifiableMap(serverList);
     }
-    
+
     public static boolean isInIpList() {
         return isInIpList;
     }
-    
+
     // Synchronize the metadata information of a node
     // A health check of the target node is also attached
-    
+
     class MemberInfoReportTask extends Task {
-        
+
         private final GenericType<RestResult<String>> reference = new GenericType<RestResult<String>>() {
         };
-        
+
         private int cursor = 0;
-        
+
         @Override
         protected void executeBody() {
             List<Member> members = ServerMemberManager.this.allMembersWithoutSelf();
-            
+
             if (members.isEmpty()) {
                 return;
             }
-            
+
             this.cursor = (this.cursor + 1) % members.size();
             Member target = members.get(cursor);
-            
+
             Loggers.CLUSTER.debug("report the metadata to the node : {}", target.getAddress());
-            
+
             final String url = HttpUtils
                     .buildUrl(false, target.getAddress(), EnvUtil.getContextPath(), Commons.NACOS_CORE_CONTEXT,
                             "/cluster/report");
-            
+
             try {
                 Header header = Header.newInstance().addParam(Constants.NACOS_SERVER_HEADER, VersionUtils.version);
                 AuthHeaderUtil.addIdentityToHeader(header);
@@ -524,7 +525,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                                                 Loggers.CLUSTER
                                                         .warn("{} : Clear support remote connection flag,target may rollback version ",
                                                                 memberNew);
-                                                
+
                                                 update(memberNew);
                                             }
                                             return;
@@ -538,7 +539,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                                             MemberUtil.onFail(ServerMemberManager.this, target);
                                         }
                                     }
-                                    
+
                                     @Override
                                     public void onError(Throwable throwable) {
                                         Loggers.CLUSTER
@@ -547,10 +548,10 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                                                         ExceptionUtil.getAllExceptionMsg(throwable));
                                         MemberUtil.onFail(ServerMemberManager.this, target, throwable);
                                     }
-                                    
+
                                     @Override
                                     public void onCancel() {
-                                    
+
                                     }
                                 });
             } catch (Throwable ex) {
@@ -558,11 +559,11 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                         ExceptionUtil.getAllExceptionMsg(ex));
             }
         }
-        
+
         @Override
         protected void after() {
             GlobalExecutor.scheduleByCommon(this, 2_000L);
         }
     }
-    
+
 }

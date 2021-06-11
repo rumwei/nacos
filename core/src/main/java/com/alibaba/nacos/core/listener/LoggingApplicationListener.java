@@ -25,22 +25,23 @@ import static org.springframework.boot.context.logging.LoggingApplicationListene
 import static org.springframework.core.io.ResourceLoader.CLASSPATH_URL_PREFIX;
 
 /**
- * For init logging configuration.
+ * 为了初始化logging配置
+ * 具体原理可参考com.alibaba.nacos.note.XianTou.java
  *
  * @author horizonzy
  * @since 1.4.1
  */
 public class LoggingApplicationListener implements NacosApplicationListener {
-    
+
     private static final String DEFAULT_NACOS_LOGBACK_LOCATION = CLASSPATH_URL_PREFIX + "META-INF/logback/nacos.xml";
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingApplicationListener.class);
-    
+
     @Override
     public void starting() {
-    
+
     }
-    
+
     @Override
     public void environmentPrepared(ConfigurableEnvironment environment) {
         if (!environment.containsProperty(CONFIG_PROPERTY)) {
@@ -52,29 +53,29 @@ public class LoggingApplicationListener implements NacosApplicationListener {
             }
         }
     }
-    
+
     @Override
     public void contextPrepared(ConfigurableApplicationContext context) {
-    
+
     }
-    
+
     @Override
     public void contextLoaded(ConfigurableApplicationContext context) {
-    
+
     }
-    
+
     @Override
     public void started(ConfigurableApplicationContext context) {
-    
+
     }
-    
+
     @Override
     public void running(ConfigurableApplicationContext context) {
-    
+
     }
-    
+
     @Override
     public void failed(ConfigurableApplicationContext context, Throwable exception) {
-    
+
     }
 }
