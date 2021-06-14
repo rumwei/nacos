@@ -61,6 +61,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Cluster node management in Nacos.
+ * 管理Nacos集群节点的组件
  *
  * <p>{@link ServerMemberManager#init()} Cluster node manager initialization {@link ServerMemberManager#shutdown()} The
  * cluster node manager is down {@link ServerMemberManager#getSelf()} Gets local node information {@link
@@ -167,9 +168,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     }
 
     private void initAndStartLookup() throws NacosException {
-        this.lookup = LookupFactory.createLookUp(this);
+        this.lookup = LookupFactory.createLookUp(this); //创建寻址组件
         isUseAddressServer = this.lookup.useAddressServer();
-        this.lookup.start();
+        this.lookup.start(); //启动寻址组件
     }
 
     /**

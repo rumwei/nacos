@@ -20,18 +20,19 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 
 /**
  * Distro data processor.
+ * Distro数据处理器
  *
  * @author xiweng.yy
  */
 public interface DistroDataProcessor {
-    
+
     /**
      * Process type of this processor.
      *
      * @return type of this processor
      */
     String processType();
-    
+
     /**
      * Process received data.
      *
@@ -39,7 +40,7 @@ public interface DistroDataProcessor {
      * @return true if process data successfully, otherwise false
      */
     boolean processData(DistroData distroData);
-    
+
     /**
      * Process received verify data.
      *
@@ -48,7 +49,7 @@ public interface DistroDataProcessor {
      * @return true if the data is available, otherwise false
      */
     boolean processVerifyData(DistroData distroData, String sourceAddress);
-    
+
     /**
      * Process snapshot data.
      *

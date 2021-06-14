@@ -12,7 +12,7 @@ import com.alibaba.nacos.core.listener.StartingApplicationListener;
  * 线头类型3：结合使用META-INF/spring.factories与实现SpringApplicationRunListener接口，从而启动，且该类型对应的类中的逻辑可以贯穿从应用
  *          启动到容器ready的整个生命流程，因此才无法使用类型1和2，因为前两者要求容器ready
  */
-public class XiaoTou {
+public class XianTou {
     /** 线头1  属于线头类型1 & 线头类型2
      * {@link ServerMemberManager}
      *

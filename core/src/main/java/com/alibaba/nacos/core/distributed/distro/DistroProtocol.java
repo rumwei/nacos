@@ -37,20 +37,22 @@ import org.springframework.stereotype.Component;
 
 /**
  * Distro protocol.
+ * Distro协议核心组件，定义了全量同步和增量同步的操作
+ * Distro协议全量数据与增量数据同步流程图：https://www.yuque.com/rumwei/es4ecb/ynt1hz
  *
  * @author xiweng.yy
  */
 @Component
 public class DistroProtocol {
-    
+
     private final ServerMemberManager memberManager;
-    
+
     private final DistroComponentHolder distroComponentHolder;
-    
+
     private final DistroTaskEngineHolder distroTaskEngineHolder;
-    
+
     private volatile boolean isInitialized = false;
-    
+
     public DistroProtocol(ServerMemberManager memberManager, DistroComponentHolder distroComponentHolder,
             DistroTaskEngineHolder distroTaskEngineHolder) {
         this.memberManager = memberManager;
@@ -58,23 +60,26 @@ public class DistroProtocol {
         this.distroTaskEngineHolder = distroTaskEngineHolder;
         startDistroTask();
     }
-    
+    //实例化时就会执行
     private void startDistroTask() {
-        if (EnvUtil.getStandaloneMode()) {
+        if (EnvUtil.getStandaloneMode()) { //单机模式就退出
             isInitialized = true;
             return;
         }
+        //启动验证任务，将自己负责的全量数据的checksum作为请求体请求其他节点的"/v1/ns/distro/checksum"接口
+        //其他节点启动验证，如果版本不一致，则删除数据并向本机获取最新数据完成更新
         startVerifyTask();
+        //启动全量同步任务
         startLoadTask();
     }
-    
+
     private void startLoadTask() {
         DistroCallback loadCallback = new DistroCallback() {
             @Override
             public void onSuccess() {
                 isInitialized = true;
             }
-            
+
             @Override
             public void onFailed(Throwable throwable) {
                 isInitialized = false;
@@ -83,17 +88,17 @@ public class DistroProtocol {
         GlobalExecutor.submitLoadDataTask(
                 new DistroLoadDataTask(memberManager, distroComponentHolder, DistroConfig.getInstance(), loadCallback));
     }
-    
+
     private void startVerifyTask() {
         GlobalExecutor.schedulePartitionDataTimedSync(new DistroVerifyTimedTask(memberManager, distroComponentHolder,
                         distroTaskEngineHolder.getExecuteWorkersManager()),
                 DistroConfig.getInstance().getVerifyIntervalMillis());
     }
-    
+
     public boolean isInitialized() {
         return isInitialized;
     }
-    
+
     /**
      * Start to sync by configured delay.
      *
@@ -103,9 +108,10 @@ public class DistroProtocol {
     public void sync(DistroKey distroKey, DataOperation action) {
         sync(distroKey, action, DistroConfig.getInstance().getSyncDelayMillis());
     }
-    
+
     /**
      * Start to sync data to all remote server.
+     * 处理增量同步数据
      *
      * @param distroKey distro key of sync data
      * @param action    the action of data operation
@@ -116,7 +122,7 @@ public class DistroProtocol {
             syncToTarget(distroKey, action, each.getAddress(), delay);
         }
     }
-    
+
     /**
      * Start to sync to target server.
      *
@@ -134,7 +140,7 @@ public class DistroProtocol {
             Loggers.DISTRO.debug("[DISTRO-SCHEDULE] {} to {}", distroKey, targetServer);
         }
     }
-    
+
     /**
      * Query data from specified server.
      *
@@ -154,7 +160,7 @@ public class DistroProtocol {
         }
         return transportAgent.getData(distroKey, distroKey.getTargetServer());
     }
-    
+
     /**
      * Receive synced distro data, find processor to process.
      *
@@ -172,7 +178,7 @@ public class DistroProtocol {
         }
         return dataProcessor.processData(distroData);
     }
-    
+
     /**
      * Receive verify data, find processor to process.
      *
@@ -193,7 +199,7 @@ public class DistroProtocol {
         }
         return dataProcessor.processVerifyData(distroData, sourceAddress);
     }
-    
+
     /**
      * Query data of input distro key.
      *
@@ -209,7 +215,7 @@ public class DistroProtocol {
         }
         return distroDataStorage.getDistroData(distroKey);
     }
-    
+
     /**
      * Query all datum snapshot.
      *

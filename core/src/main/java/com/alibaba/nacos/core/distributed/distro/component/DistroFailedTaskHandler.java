@@ -21,11 +21,12 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 
 /**
  * Distro failed task handler.
+ * 单方法组件接口，方法retry供distro同步任务失败时构建重试任务
  *
  * @author xiweng.yy
  */
 public interface DistroFailedTaskHandler {
-    
+
     /**
      * Build retry task when distro task execute failed.
      *

@@ -18,16 +18,17 @@ package com.alibaba.nacos.core.distributed.distro.component;
 
 /**
  * Distro callback.
+ * Distro任务执行回调接口
  *
  * @author xiweng.yy
  */
 public interface DistroCallback {
-    
+
     /**
      * Callback when distro task execute successfully.
      */
     void onSuccess();
-    
+
     /**
      * Callback when distro task execute failed.
      *

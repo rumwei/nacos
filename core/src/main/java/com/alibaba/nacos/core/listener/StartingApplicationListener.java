@@ -76,13 +76,13 @@ public class StartingApplicationListener implements NacosApplicationListener {
 
     @Override
     public void environmentPrepared(ConfigurableEnvironment environment) {
-        makeWorkDir();
+        makeWorkDir(); //确保Nacos根目录中的"log","conf","data"目录存在
 
-        injectEnvironment(environment);
+        injectEnvironment(environment); //将springboot启动时收集到的environment环境变量保存到EnvUtil的static属性中
 
-        loadPreProperties(environment);
+        loadPreProperties(environment); //加载Nacos指定的配置文件并用FileWatcher监听变更
 
-        initSystemProperty();
+        initSystemProperty(); //初始化系统变量
     }
 
     @Override

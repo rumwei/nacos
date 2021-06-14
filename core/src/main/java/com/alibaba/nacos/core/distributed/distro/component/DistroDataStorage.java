@@ -23,16 +23,17 @@ import java.util.List;
 
 /**
  * Distro data storage.
+ * Distro协议数据存储抽象
  *
  * @author xiweng.yy
  */
 public interface DistroDataStorage {
-    
+
     /**
      * Set this distro data storage has finished initial step.
      */
     void finishInitial();
-    
+
     /**
      * Whether this distro data is finished initial.
      *
@@ -41,7 +42,7 @@ public interface DistroDataStorage {
      * @return {@code true} if finished, otherwise false
      */
     boolean isFinishInitial();
-    
+
     /**
      * Get distro datum.
      *
@@ -49,14 +50,14 @@ public interface DistroDataStorage {
      * @return need to sync datum
      */
     DistroData getDistroData(DistroKey distroKey);
-    
+
     /**
      * Get all distro datum snapshot.
      *
      * @return all datum
      */
     DistroData getDatumSnapshot();
-    
+
     /**
      * Get verify datum.
      *

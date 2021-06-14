@@ -24,32 +24,36 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+//region 注释用import
+import com.alibaba.nacos.naming.controllers.InstanceController;
+//endregion
+
 /**
- * Nacos service manager for v2.
+ * Nacos service manager for v2. v2即为nacos 2.0版本以上，包含了支持grpc等长链接特性，具体可看{@link InstanceController}
  *
  * @author xiweng.yy
  */
 public class ServiceManager {
-    
+
     private static final ServiceManager INSTANCE = new ServiceManager();
-    
+
     private final ConcurrentHashMap<Service, Service> singletonRepository;
-    
+
     private final ConcurrentHashMap<String, Set<Service>> namespaceSingletonMaps;
-    
+
     private ServiceManager() {
         singletonRepository = new ConcurrentHashMap<>(1 << 10);
         namespaceSingletonMaps = new ConcurrentHashMap<>(1 << 2);
     }
-    
+
     public static ServiceManager getInstance() {
         return INSTANCE;
     }
-    
+
     public Set<Service> getSingletons(String namespace) {
         return namespaceSingletonMaps.getOrDefault(namespace, new HashSet<>(1));
     }
-    
+
     /**
      * Get singleton service. Put to manager if no singleton.
      *
@@ -63,7 +67,7 @@ public class ServiceManager {
         namespaceSingletonMaps.get(result.getNamespace()).add(result);
         return result;
     }
-    
+
     /**
      * Get singleton service if Exist.
      *
@@ -75,7 +79,7 @@ public class ServiceManager {
     public Optional<Service> getSingletonIfExist(String namespace, String group, String name) {
         return getSingletonIfExist(Service.newService(namespace, group, name));
     }
-    
+
     /**
      * Get singleton service if Exist.
      *
@@ -85,11 +89,11 @@ public class ServiceManager {
     public Optional<Service> getSingletonIfExist(Service service) {
         return Optional.ofNullable(singletonRepository.get(service));
     }
-    
+
     public Set<String> getAllNamespaces() {
         return namespaceSingletonMaps.keySet();
     }
-    
+
     /**
      * Remove singleton service.
      *
@@ -102,11 +106,11 @@ public class ServiceManager {
         }
         return singletonRepository.remove(service);
     }
-    
+
     public boolean containSingleton(Service service) {
         return singletonRepository.containsKey(service);
     }
-    
+
     public int size() {
         return singletonRepository.size();
     }
